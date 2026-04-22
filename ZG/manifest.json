@@ -1,0 +1,15 @@
+{
+  "name": "ZedGenius",
+  "short_name": "ZedGenius", 
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#008000",
+  "theme_color": "#008000",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

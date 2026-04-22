@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>ZedGenius</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#008000">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#f7f8fa; --card:#fff; --text:#1c1e21; --green:#008000; --msg-bg:#efeae2; --ai-bg:#fff; --user-bg:#d9fdd3; --border:#e4e6eb; --input:#fff;
+    }
+.dark {
+      --bg:#0b141a; --card:#202c33; --text:#e9edef; --green:#00a884; --msg-bg:#0b141a; --ai-bg:#202c33; --user-bg:#005c4b; --border:#2a3942; --input:#2a3942;
+    }
+    * {margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+    body {background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;transition:0.2s}
+.header {background:var(--green);color:white;padding:16px;text-align:center;font-weight:600;position:relative;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.menu-btn {position:absolute;left:16px;top:16px;font-size:22px;cursor:pointer}
+.menu {display:none;position:absolute;left:12px;top:58px;background:var(--card);border:1px solid var(--border);border-radius:12px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.menu-item {padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border)}
+.menu-item:last-child {border:none}
+.subjects {display:grid;grid-template-columns:1fr 1fr;padding:12px;gap:12px;overflow-y:auto}
+.sub-btn {background:var(--card);border:1px solid var(--border);color:var(--text);padding:24px 12px;border-radius:16px;font-size:15px;font-weight:500;cursor:pointer;transition:0.2s}
+.sub-btn:active {transform:scale(0.97)}
+.chat-view {display:none;flex-direction:column;height:100%}
+.chat-header {background:var(--green);color:white;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.back {font-size:26px;cursor:pointer;line-height:1}
+.messages {flex:1;padding:16px 12px;overflow-y:auto;background:var(--msg-bg)}
+.msg {max-width:80%;margin:2px 0 8px;padding:8px 12px;border-radius:18px;word-wrap:break-word;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,0.05)}
+.user {background:var(--user-bg);margin-left:auto;border-bottom-right-radius:4px}
+.ai {background:var(--ai-bg);border-bottom-left-radius:4px}
+.original {font-size:15px}
+.simple {font-size:15px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);opacity:0.9}
+.voice-btn {font-size:13px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:16px;margin-top:6px;margin-right:6px;cursor:pointer}
+.input-area {display:flex;padding:8px 12px;background:var(--card);align-items:flex-end;gap:8px;border-top:1px solid var(--border)}
+.input-area input {flex:1;padding:12px 16px;border-radius:24px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:16px;max-height:120px;resize:none}
+.icon-btn {background:none;border:none;font-size:26px;cursor:pointer;padding:6px}
+.mike-btn {font-size:20px;min-width:44px;height:44px;border-radius:50%;background:var(--green);color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.2s}
+.mike-btn:active {transform:scale(0.9)}
+.mike-btn.recording {background:#e74c3c;animation:pulse 1.5s infinite}
+    @keyframes pulse {0%,100%{opacity:1} 50%{opacity:0.7}}
+    #editorModal {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99;flex-direction:column}
+    #imgContainer {flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    #editImage {max-width:100%;max-height:100%}
+.editor-tools {background:#111;padding:12px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px}
+.tool-btn {color:white;background:#333;border:none;padding:12px 16px;border-radius:12px;font-size:14px}
+.glow-logo {width:90px;height:90px;margin:24px auto;display:block;animation:glow 2s ease-in-out infinite}
+    @keyframes glow {0%,100%{filter:drop-shadow(0 0 8px #00FF00)} 50%{filter:drop-shadow(0 0 24px #00FF00)}}
+.onboard {text-align:center;padding:24px}
+.camera-modal {display:none;position:fixed;bottom:0;left:0;width:100%;background:var(--card);border-top-left-radius:20px;border-top-right-radius:20px;padding:20px;z-index:98;box-shadow:0 -4px 20px rgba(0,0,0,0.2)}
+.camera-option {padding:18px;text-align:center;border-bottom:1px solid var(--border);font-size:17px;cursor:pointer}
+.camera-option:last-child {border:none;color:#e74c3c}
+  </style>
+</head>
+<body>
+  <div id="homeView">
+    <div class="header">
+      <span class="menu-btn" onclick="toggleMenu()">☰</span>
+      ZedGenius 🇿🇲<br><small>Grade 12 AI, Born in Zambia</small>
+      <div class="menu" id="menu">
+        <div class="menu-item" onclick="toggleDark()">🌙 Dark Mode</div>
+        <div class="menu-item" onclick="clearData()">🗑️ Clear Chats</div>
+      </div>
+    </div>
+    <div class="subjects" id="subjectList"></div>
+  </div>
+
+  <div id="chatView" class="chat-view">
+    <div class="chat-header">
+      <span class="back" onclick="goHome()">←</span>
+      <span id="chatSubject">Subject</span>
+    </div>
+    <div class="messages" id="msgContainer"></div>
+    <div class="input-area">
+      <button class="icon-btn" onclick="showCameraOptions()">📷</button>
+      <input type="text" id="textInput" placeholder="Ask ZedGenius..." oninput="toggleMike()" onkeypress="if(event.key==='Enter')handleMike()">
+      <button class="mike-btn" id="mikeBtn" onclick="handleMike()">🎤</button>
+    </div>
+  </div>
+
+  <div class="camera-modal" id="cameraModal">
+    <div class="camera-option" onclick="openCamera('environment')">📸 Take Photo</div>
+    <div class="camera-option" onclick="openCamera('user')">🤳 Selfie</div>
+    <div class="camera-option" onclick="openGallery()">🖼️ Choose from Gallery</div>
+    <div class="camera-option" onclick="hideCameraOptions()">Cancel</div>
+  </div>
+
+  <div id="editorModal">
+    <div id="imgContainer"><img id="editImage"></div>
+    <canvas id="drawCanvas" style="position:absolute;top:0;left:0;touch-action:none"></canvas>
+    <div class="editor-tools">
+      <button class="tool-btn" onclick="setDrawColor('black')">⚫</button>
+      <button class="tool-btn" onclick="setDrawColor('white')">⚪</button>
+      <button class="tool-btn" onclick="setDrawColor('red')">🔴</button>
+      <button class="tool-btn" onclick="cropImage()">✂️ Crop</button>
+      <button class="tool-btn" onclick="sendEditedImage()">Send ➤</button>
+      <button class="tool-btn" onclick="closeEditor()">X</button>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="loadImageToEditor(event)">
+
+<script>
+const GEMINI_API_KEY = 'AIzaSyDo6eiXepa9sOVJK6bdBPtYg81UHmbrg8U';
+
+const subjects = ["Mathematics","Biology","English","Physics","Chemistry","Civics","Commerce","R.E","Geography","Computer Studies","Food & Nutrition"];
+let currentSubject = "", chats = JSON.parse(localStorage.getItem('zedChats') || '{}');
+let userData = JSON.parse(localStorage.getItem('zedUser') || '{}');
+let cropper, canvas, ctx, drawing=false, drawColor='red', mediaRecorder, audioChunks=[], isRecording=false;
+let availableVoices = [];
+
+if(localStorage.getItem('zedDark')==='1') document.body.classList.add('dark');
+function toggleDark(){ document.body.classList.toggle('dark'); localStorage.setItem('zedDark', document.body.classList.contains('dark')?1:0); toggleMenu(); }
+function toggleMenu(){ document.getElementById('menu').style.display = document.getElementById('menu').style.display==='block'?'none':'block'; }
+function clearData(){ if(confirm('Clear all chats?')){localStorage.removeItem('zedChats');location.reload()} }
+
+speechSynthesis.onvoiceschanged = () => availableVoices = speechSynthesis.getVoices();
+setTimeout(() => availableVoices = speechSynthesis.getVoices(), 500);
+
+function getZedPrompt(userQ) {
+  let slang = '', genderRule = '';
+  if(userData.gender === 'male') {
+    slang = `Use ${userData.name}, bruv, exeh sometimes. Never use babe.`;
+    genderRule = 'User is male. Address as bruv/exeh. Never call him babe.';
+  } else if(userData.gender === 'female') {
+    slang = `Use ${userData.name}, babe sometimes.`;
+    genderRule = 'User is female. You may use babe.';
+  }
+  
+  const needsExplain = /explain|why|how|what is|solve|show me|help me understand|calculate|find/i.test(userQ);
+  const formatRule = needsExplain? 
+    `MUST reply: Original: [formal ECZ answer] \nSimplified explanation: [Zambian explanation with nshima, Kwacha, Rosa bus, ZESCO examples].` : 
+    `Reply directly and briefly. Only add 'Simplified explanation:' if concept is hard.`;
+  
+  return `You are ZedGenius, an AI tutor from Kabwe for Zambian Grade 12 ECZ students. 
+Rules: Simple English. ${genderRule} Use 'wala man' ONLY to mean NO. Match user energy on greetings. Never say you're Google/Gemini.
+${formatRule} ${slang} If user speaks Bemba/Nyanja mix and unclear, ask: "Exeh, didn’t catch that. You meant X or Y?"
+User question: `;
+}
+
+function init() {
+  const list = document.getElementById('subjectList');
+  subjects.forEach(sub => list.innerHTML += `<button class="sub-btn" onclick="openChat('${sub}')">${sub}</button>`);
+}
+init();
+
+function openChat(sub) {
+  currentSubject = sub;
+  document.getElementById('homeView').style.display = 'none';
+  document.getElementById('chatView').style.display = 'flex';
+  document.getElementById('chatSubject').innerText = sub;
+  loadChat();
+  
+  if(!userData.name) {
+    const logo = `<div class="onboard"><svg class="glow-logo" viewBox="0 0 512 512"><rect width="512" height="512" fill="#000"/><text x="50%" y="55%" font-family="Arial Black" font-size="200" fill="#00FF00" text-anchor="middle" dominant-baseline="middle">ZG</text><path d="M370 200 L430 230 L370 260 Z" fill="#FF8C00"/></svg><h3>ZedGenius here 🤩</h3><p>New here? What's your name and are you my bro or my babe?</p><p><small>Reply like "John bro" or "Mary babe"</small></p></div>`;
+    document.getElementById('msgContainer').innerHTML = logo;
+    window.awaitingOnboard = true;
+  } else if(!chats[sub] || chats[sub].length===0) {
+    addAiMsg(`ZedGenius ready for ${sub}. We back ${userData.name}? Ask me anything ${userData.gender==='male'?'exeh':'babe'}.`);
+  }
+}
+
+function goHome() {
+  document.getElementById('homeView').style.display = 'block';
+  document.getElementById('chatView').style.display = 'none';
+  saveChats();
+}
+
+function loadChat() {
+  const cont = document.getElementById('msgContainer');
+  cont.innerHTML = '';
+  if(chats[currentSubject]) chats[currentSubject].forEach(m => cont.innerHTML += m);
+  cont.scrollTop = cont.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const html = `<div class="msg user">${text}</div>`;
+  document.getElementById('msgContainer').innerHTML += html;
+  if(!chats[currentSubject]) chats[currentSubject] = [];
+  chats[currentSubject].push(html);
+  saveChats();
+  document.getElementById('msgContainer').scrollTop = 99999;
+}
+
+function addAiMsg(text) {
+  let html;
+  if(text.includes('Simplified explanation:')) {
+    let parts = text.split('Simplified explanation:');
+    let original = parts[0].replace('Original:','').trim();
+    let simple = parts[1]? parts[1].trim() : '';
+    html = `<div class="msg ai"><div class="original">${original}</div><div class="simple"><b>Simplified explanation:</b> ${simple}</div><button class="voice-btn" onclick="speakText(this,'male')">🔊 Uncle Zed</button><button class="voice-btn" onclick="speakText(this,'female')">🔊 Aunty Zed</button></div>`;
+  } else {
+    html = `<div class="msg ai"><div class="original">${text}</div><button class="voice-btn" onclick="speakText(this,'male')">🔊 Uncle Zed</button><button class="voice-btn" onclick="speakText(this,'female')">🔊 Aunty Zed</button></div>`;
+  }
+  document.getElementById('msgContainer').innerHTML += html;
+  if(!chats[currentSubject]) chats[currentSubject] = [];
+  chats[currentSubject].push(html);
+  saveChats();
+  document.getElementById('msgContainer').scrollTop = 99999;
+}
+
+function saveChats() { localStorage.setItem('zedChats', JSON.stringify(chats)); }
+
+async function callGemini(question) {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({contents: [{parts: [{text: getZedPrompt(question) + question}]}]})
+  });
+  if(!res.ok) throw new Error('API_ERROR');
+  const data = await res.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+function toggleMike() {
+  const input = document.getElementById('textInput');
+  const btn = document.getElementById('mikeBtn');
+  if(input.value.trim().length > 0) { btn.innerText = '➤'; } 
+  else { btn.innerText = isRecording? '⏹️' : '🎤'; }
+}
+
+function handleMike() {
+  const input = document.getElementById('textInput');
+  if(input.value.trim().length > 0) {
+    sendText();
+  } else {
+    if(isRecording) { stopRecording(); } else { startRecording(); }
+  }
+}
+
+async function sendText() {
+  const input = document.getElementById('textInput');
+  const q = input.value.trim();
+  if(!q) return;
+  addUserMsg(q);
+  input.value = '';
+  toggleMike();
+  
+  if(window.awaitingOnboard) {
+    let lower = q.toLowerCase();
+    if(lower.includes('bro') || lower.includes('male') || lower.includes('man')) {
+      userData.gender = 'male'; userData.name = q.split(' ')[0];
+    } else if(lower.includes('babe') || lower.includes('female')) {
+      userData.gender = 'female'; userData.name = q.split(' ')[0];
+    } else {
+      userData.gender = 'male'; userData.name = q.split(' ')[0];
+    }
+    localStorage.setItem('zedUser', JSON.stringify(userData));
+    window.awaitingOnboard = false;
+    document.getElementById('msgContainer').innerHTML = '';
+    addAiMsg(`Got you ${userData.name}! Let’s pass ECZ ${userData.gender==='male'?'exeh':'babe'}. Ask me anything.`);
+    return;
+  }
+  
+  if(/^(hi|hello|hey|muli bwanji|shani)/i.test(q)) {
+    addAiMsg(q + ` ${userData.name || 'exeh'}! 🔥 What subject we attacking today?`);
+    return;
+  }
+  
+  addAiMsg(`Give me 2 sec ${userData.name || 'exeh'}...`);
+  const loadingMsg = document.querySelector('.messages').lastChild;
+  
+  try {
+    const answer = await callGemini(q);
+    loadingMsg.remove();
+    addAiMsg(answer);
+  } catch(e) {
+    loadingMsg.remove();
+    addAiMsg(`Wala man, network failed. Check your bundles ${userData.name || 'exeh'}.`);
+  }
+}
+
+function speakText(btn, gender='male') {
+  speechSynthesis.cancel();
+  const text = btn.parentElement.querySelector('.simple')?.innerText || btn.parentElement.querySelector('.original')?.innerText;
+  const msg = new SpeechSynthesisUtterance(text.replace('Simplified explanation:',''));
+  msg.rate = 0.9; msg.pitch = gender === 'male'? 0.7 : 1.3;
+  if(availableVoices.length > 0) {
+    if(gender === 'male') {
+      msg.voice = availableVoices.find(v => v.name.includes('Daniel') || v.name.includes('Fred') || v.name.includes('Google UK English Male')) || availableVoices[0];
+    } else {
+      msg.voice = availableVoices.find(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Google UK English Female')) || availableVoices[1] || availableVoices[0];
+    }
+  }
+  speechSynthesis.speak(msg);
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      addUserMsg('[Voice note sent]');
+      addAiMsg(`Wala man, I can't transcribe voice yet bruv. Type your question for now. Voice-to-text coming in v3.`);
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    document.getElementById('mikeBtn').innerText = '⏹️';
+    document.getElementById('mikeBtn').classList.add('recording');
+  } catch(e) {
+    alert('Wala man, mic permission denied. Go Settings → Safari → Microphone → Allow.');
+  }
+}
+
+function stopRecording() {
+  if(mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    isRecording = false;
+    document.getElementById('mikeBtn').innerText = '🎤';
+    document.getElementById('mikeBtn').classList.remove('recording');
+  }
+}
+
+function showCameraOptions() { document.getElementById('cameraModal').style.display = 'block'; }
+function hideCameraOptions() { document.getElementById('cameraModal').style.display = 'none'; }
+
+function openCamera(facing) {
+  hideCameraOptions();
+  const input = document.getElementById('fileInput');
+  input.setAttribute('capture', facing);
+  input.click();
+}
+
+function openGallery() {
+  hideCameraOptions();
+  const input = document.getElementById('fileInput');
+  input.removeAttribute('capture');
+  input.click();
+}
+
+function loadImageToEditor(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    document.getElementById('editImage').src = reader.result;
+    document.getElementById('editorModal').style.display = 'flex';
+    setTimeout(initEditor, 100);
+  };
+  reader.readAsDataURL(file);
+}
+
+function initEditor() {
+  const img = document.getElementById('editImage');
+  if(cropper) cropper.destroy();
+  cropper = new Cropper(img, {viewMode:1, background:false});
+  canvas = document.getElementById('drawCanvas');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight - 60;
+  ctx = canvas.getContext('2d'); ctx.lineWidth = 4; ctx.lineCap = 'round';
+  canvas.ontouchstart = startDraw; canvas.ontouchmove = draw; canvas.ontouchend = () => drawing=false;
+  canvas.onmousedown = startDraw; canvas.onmousemove = draw; canvas.onmouseup = () => drawing=false;
+}
+
+function startDraw(e) { drawing = true; draw(e); }
+function draw(e) {
+  if(!drawing) return; e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
+  ctx.strokeStyle = drawColor; ctx.lineTo(x,y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y);
+}
+function setDrawColor(c) { drawColor = c; ctx.beginPath(); }
+function cropImage() { 
+  const cropped = cropper.getCroppedCanvas().toDataURL();
+  document.getElementById('editImage').src = cropped; cropper.destroy();
+  setTimeout(()=> cropper = new Cropper(document.getElementById('editImage'), {viewMode:1}),100);
+}
+function closeEditor(){ document.getElementById('editorModal').style.display = 'none'; if(cropper) cropper.destroy(); ctx.clearRect(0,0,canvas.width,canvas.height); }
+function sendEditedImage(){ closeEditor(); addUserMsg('[Image of question sent]'); sendTextWithImage(); }
+async function sendTextWithImage() {
+  addAiMsg(`Let me check this question ${userData.name || 'exeh'}...`);
+  const loadingMsg = document.querySelector('.messages').lastChild;
+  try {
+    const answer = await callGemini("User sent an image of a Grade 12 ECZ question. Explain how to solve it step by step. Use Simplified explanation if complex.");
+    loadingMsg.remove();
+    addAiMsg(answer);
+  } catch(e) {
+    loadingMsg.remove();
+    addAiMsg(`Wala man, couldn’t read the pic. Try again ${userData.name || 'exeh'}.`);
+  }
+}
+</script>
+</body>
+</html>
